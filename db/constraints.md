@@ -1,6 +1,6 @@
 # Обоснование ограничений
 
-Схема: `kuznetsova_food`. Тикет: **FOOD-101**.
+Схема: `kuznetsova_food`. Тикеты: **FOOD-101** (схема), **FOOD-102** / **FOOD-103** (генератор и очистка тестовых данных — см. раздел в конце).
 
 SQL-скрипты (запускать по порядку):
 
@@ -10,6 +10,8 @@ SQL-скрипты (запускать по порядку):
 | `db/schema/02_types.sql` | 8 enum-типов |
 | `db/schema/03_tables.sql` | 12 таблиц, PK / FK / UNIQUE / CHECK / NOT NULL / DEFAULT / GENERATED, индексы по FK |
 | `db/schema/04_integrity_triggers.sql` | триггеры для правил, которые нельзя выразить декларативно без нарушения 3НФ |
+| `db/schema/05_insert_test_data.sql` | FOOD-102: процедура `insert_test_data(value int)` |
+| `db/schema/06_erase_test_data.sql` | FOOD-103: процедура `erase_test_data()` |
 
 Требуется PostgreSQL 15+ (используется `UNIQUE NULLS NOT DISTINCT`).
 
