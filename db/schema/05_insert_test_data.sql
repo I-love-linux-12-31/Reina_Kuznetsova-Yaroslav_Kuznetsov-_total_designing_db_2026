@@ -103,8 +103,10 @@ declare
     v_cour_status  courier_status;
     v_female       boolean;
 
-    -- ресторан
+    -- ресторан и блюдо
     v_work_start   time;
+    v_restaurant_n text;
+    v_product_n    text;
 
     -- заказ
     v_client       uuid;
@@ -190,11 +192,23 @@ begin
     for i in 1..value loop
         v_work_start := time '06:00' + floor(random() * 361)::int * interval '1 minute';
 
+        v_try := 0;
+        loop
+            v_try := v_try + 1;
+            v_restaurant_n := v_rest_kind[floor(random() * cardinality(v_rest_kind))::int + 1]
+                              || ' «' || v_rest_name[floor(random() * cardinality(v_rest_name))::int + 1] || '»'
+                              || case when v_try > 10 then ' №' || (floor(random() * 900)::int + 100) else '' end;
+
+            exit when not exists (select 1 from restaurant r where r.restaurant_name = v_restaurant_n);
+            if v_try >= c_max_attempts then
+                raise exception 'insert_test_data: не удалось подобрать уникальное название ресторана';
+            end if;
+        end loop;
+
         insert into restaurant (restaurant_id, restaurant_name, address_id, description,
                                 work_start, work_end, company_details, rating, status)
         values (exts.uuid_generate_v4(),
-                v_rest_kind[floor(random() * cardinality(v_rest_kind))::int + 1]
-                    || ' «' || v_rest_name[floor(random() * cardinality(v_rest_name))::int + 1] || '»',
+                v_restaurant_n,
                 v_addresses[i],
                 v_rest_desc[floor(random() * cardinality(v_rest_desc))::int + 1],
                 v_work_start,
@@ -299,16 +313,35 @@ begin
     -- 7. product (value * 5). Первые value - по одному каждому ресторану, чтобы
     --    в любом ресторане было что заказать. Цена > 0 (BR-5.3), фото - иногда NULL
     --    (BR-5.6), rating - после отзывов (шаг 10).
+    --    В меню одного ресторана названия не повторяются (иначе best_product_name
+    --    в get_statistic не отличал бы одно блюдо от другого).
     for i in 1..value * 5 loop
+        v_restaurant := case when i <= value then v_restaurants[i]
+                             else v_restaurants[floor(random() * value)::int + 1] end;
+
+        v_try := 0;
+        loop
+            v_try := v_try + 1;
+            v_product_n := v_dish_adj[floor(random() * cardinality(v_dish_adj))::int + 1]
+                           || ' ' || v_dish_noun[floor(random() * cardinality(v_dish_noun))::int + 1]
+                           || case when v_try > 10 then ' №' || (floor(random() * 900)::int + 100) else '' end;
+
+            exit when not exists (select 1
+                                    from product p
+                                   where p.restaurant_id = v_restaurant
+                                     and p.product_name  = v_product_n);
+            if v_try >= c_max_attempts then
+                raise exception 'insert_test_data: не удалось подобрать уникальное название блюда';
+            end if;
+        end loop;
+
         insert into product (product_id, product_name, product_category_id, price, restaurant_id,
                              photo_url, rating, status, description)
         values (exts.uuid_generate_v4(),
-                v_dish_adj[floor(random() * cardinality(v_dish_adj))::int + 1]
-                    || ' ' || v_dish_noun[floor(random() * cardinality(v_dish_noun))::int + 1],
+                v_product_n,
                 v_categories[floor(random() * value)::int + 1],
                 50 + floor(random() * 1451),                                        -- 50..1500 ₽
-                case when i <= value then v_restaurants[i]
-                     else v_restaurants[floor(random() * value)::int + 1] end,
+                v_restaurant,
                 case when random() < 0.3 then null
                      else 'https://cdn.foodexpress.ru/img/' || md5(random()::text) || '.jpg' end,
                 null,
