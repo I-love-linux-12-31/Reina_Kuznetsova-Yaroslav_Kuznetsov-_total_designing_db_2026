@@ -12,8 +12,15 @@ SQL-скрипты (запускать по порядку):
 | `db/schema/04_integrity_triggers.sql` | триггеры для правил, которые нельзя выразить декларативно без нарушения 3НФ |
 | `db/schema/05_insert_test_data.sql` | FOOD-102: процедура `insert_test_data(value int)` |
 | `db/schema/06_erase_test_data.sql` | FOOD-103: процедура `erase_test_data()` |
+| `db/schema/07_add_product.sql` | FOOD-104: процедура `add_product(...)` |
+| `db/schema/08_rating_change.sql` | FOOD-105: триггерная функция `rating_change()` и триггер `rating_change_trg` на `review` |
+| `db/schema/09_get_statistic.sql` | FOOD-106: функция `get_statistic()` |
+| `db/schema/10_courier_salary.sql` | FOOD-107: процедура `courier_salary()` |
+| `db/schema/11_how_much_money.sql` | FOOD-108: представление `how_much_money` |
+| `db/schema/grants.sql` | FOOD-109: пользователь `inspector` и его права; запускается последним, под суперпользователем |
+| `db/foodexpress_kuznetsova.backup` | FOOD-110: архив `pg_dump -Fc` схемы `kuznetsova_food` (вместо скриптов 01–11) |
 
-Требуется PostgreSQL 15+ (используется `UNIQUE NULLS NOT DISTINCT`).
+Требуется PostgreSQL 15+ (используется `UNIQUE NULLS NOT DISTINCT`). Бэкап восстанавливается `pg_restore` 15 и новее (см. FOOD-110).
 
 ## Общие решения
 
