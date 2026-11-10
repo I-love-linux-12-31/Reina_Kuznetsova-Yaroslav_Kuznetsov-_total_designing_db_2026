@@ -464,10 +464,14 @@ begin
              limit value * 5) c;
 
 
-    -- 10. Агрегированные рейтинги (BR-9.6) - напрямую, без rating_change.
+    -- 10. Агрегированные рейтинги (BR-9.6) - напрямую, без вызова rating_change.
     --     Отзывы пакета ссылаются только на блюда/рестораны пакета, поэтому
     --     среднее по всем их отзывам = среднее по отзывам пакета. Без отзывов -
     --     NULL (BR-9.7, значение по умолчанию).
+    --     Триггер rating_change_trg (FOOD-105) срабатывает на вставку отзывов
+    --     сам и вычисляет то же значение; генератор на него не полагается,
+    --     поэтому корректен и без триггера. Строки с уже верным рейтингом
+    --     не перезаписываются.
     update product p
        set rating = s.avg_rating
       from (select r.entity_id, round(avg(r.rating), 2) as avg_rating
@@ -475,7 +479,8 @@ begin
              where r.entity_type = 'блюдо'
                and r.entity_id = any (v_products)
              group by r.entity_id) s
-     where p.product_id = s.entity_id;
+     where p.product_id = s.entity_id
+       and p.rating is distinct from s.avg_rating;
 
     update restaurant rs
        set rating = s.avg_rating
@@ -484,7 +489,8 @@ begin
              where r.entity_type = 'ресторан'
                and r.entity_id = any (v_restaurants)
              group by r.entity_id) s
-     where rs.restaurant_id = s.entity_id;
+     where rs.restaurant_id = s.entity_id
+       and rs.rating is distinct from s.avg_rating;
 
 
     -- 11. courier_pay за 6 месяцев + courier.coefficient (BR-10.2, BR-10.7).
